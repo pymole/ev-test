@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  web:
+    build: ./controller/
+    ports:
+      - 80:80
+    depends_on:
+      - manipulator
+      - db
+      - cache
+    environment:
+      - ADMIN_API_KEY=${ADMIN_API_KEY}
+      - MANIPULATOR_HOST=${MANIPULATOR_HOST}
+      - MANIPULATOR_PORT=${MANIPULATOR_PORT}
+      - REDIS_URL=${REDIS_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+
+  db:
+    image: postgres:13.1-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - 5432:5432
+
+  cache:
+    image: redis:6.2.1-alpine
+    ports:
+      - 6379:6379
+    volumes:
+      - cache_data:/data
+
+  manipulator:
+    build: ./manipulator/
+    ports:
+      - $MANIPULATOR_PORT:$MANIPULATOR_PORT
+    environment:
+      - MANIPULATOR_HOST=${MANIPULATOR_HOST}
+      - MANIPULATOR_PORT=${MANIPULATOR_PORT}
+  sensor:
+    build: ./sensor/
+    depends_on:
+      - web
+    environment:
+      - CONTROLLER_URL=${CONTROLLER_URL}
+      - TIMEOUT=${TIMEOUT}
+
+volumes:
+  postgres_data:
+  cache_data:
